@@ -19,6 +19,7 @@ func NewQueryInternalDocsTool() tool.InvokableTool {
 		"query_internal_docs",
 		"Use this tool to search internal documentation and knowledge base for relevant information. It performs RAG (Retrieval-Augmented Generation) to find similar documents and extract processing steps. This is useful when you need to understand internal procedures, best practices, or step-by-step guides stored in the company's documentation.",
 		func(ctx context.Context, input *QueryInternalDocsInput, opts ...tool.Option) (output string, err error) {
+			log.Printf("QueryInternalDocs tool called with query: %s", input.Query)
 			rr, err := retriever.NewMilvusRetriever(ctx)
 			if err != nil {
 				log.Fatal(err)

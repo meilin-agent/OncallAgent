@@ -8,22 +8,41 @@ import (
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
+	"github.com/gogf/gf/v2/frame/g"
 )
 
 func main() {
 	ctx := context.Background()
 	// 创建 ChatModel
+
+	model, err := g.Cfg().Get(ctx, "ds_think_chat_model.model")
+	if err != nil {
+		panic(err)
+	}
+	api_key, err := g.Cfg().Get(ctx, "ds_think_chat_model.api_key")
+	if err != nil {
+		panic(err)
+	}
+	base_url, err := g.Cfg().Get(ctx, "ds_think_chat_model.base_url")
+	if err != nil {
+		panic(err)
+	}
+
 	config := &openai.ChatModelConfig{
-		APIKey:  "bc499880-ede3-4023-8991-2e84c0a83dd1",
-		Model:   "deepseek-v3-1-terminus",
-		BaseURL: "https://ark.cn-beijing.volces.com/api/v3",
+		APIKey:  api_key.String(),
+		Model:   model.String(),
+		BaseURL: base_url.String(),
 	}
 	chatModel, err := openai.NewChatModel(ctx, config)
 	if err != nil {
 		panic(err)
 	}
 	// 获取工具信息, 用于绑定到 ChatModel
-	toolList, _ := tools2.GetLogMcpTool()
+	toolList, err := tools2.GetLogMcpTool()
+	if err != nil {
+		panic(err)
+	}
+	toolList = append(toolList, tools2.NewMysqlCrudTool())
 	toolList = append(toolList, tools2.NewGetCurrentTimeTool())
 	toolInfos := make([]*schema.ToolInfo, 0)
 	var info *schema.ToolInfo

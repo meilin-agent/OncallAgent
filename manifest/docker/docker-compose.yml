@@ -1,4 +1,5 @@
 services:
+  # 这个 etcd 服务是 Milvus 的分布式协调服务，负责管理 Milvus 集群中的节点信息和状态。它提供了一个分布式键值存储，Milvus 可以通过它来实现分布式锁、服务发现等功能。
   etcd:
     container_name: milvus-etcd
     image: quay.io/coreos/etcd:v3.5.18
@@ -15,7 +16,7 @@ services:
       interval: 30s
       timeout: 20s
       retries: 3
-
+  # 这个 minio 服务是 Milvus 的对象存储服务，负责存储 Milvus 中的向量数据和相关文件。它提供了一个 S3 兼容的接口，Milvus 可以通过这个接口来读写数据。
   minio:
     container_name: milvus-minio
     image: minio/minio:RELEASE.2023-03-20T20-16-18Z
@@ -33,16 +34,18 @@ services:
       interval: 30s
       timeout: 20s
       retries: 3
-
+  # 这个 standalone 服务是 Milvus 向量数据库服务，负责存储和管理向量数据。它依赖于 etcd 和 minio 来提供分布式协调和对象存储功能。
   standalone:
     container_name: milvus-standalone
     image: milvusdb/milvus:v2.5.10
     command: ["milvus", "run", "standalone"]
     security_opt:
-    - seccomp:unconfined
+      - seccomp:unconfined
     environment:
       ETCD_ENDPOINTS: etcd:2379
       MINIO_ADDRESS: minio:9000
+      MINIO_ACCESS_KEY_ID: minioadmin
+      MINIO_SECRET_ACCESS_KEY: minioadmin
     volumes:
       - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/milvus:/var/lib/milvus
     healthcheck:
@@ -57,7 +60,7 @@ services:
     depends_on:
       - "etcd"
       - "minio"
-  # 这是新增的 Attu 服务哦！
+  # 这是 Attu 服务哦，它会连接到 Milvus standalone 服务，提供一个可视化界面来管理和查询 Milvus 中的向量数据。
   attu:
     container_name: milvus-attu
     image: zilliz/attu:v2.6
@@ -68,6 +71,33 @@ services:
       MILVUS_URL: standalone:19530
     depends_on:
       - standalone # 确保 Milvus 启动后再启动 Attu
+
+  # 这个 prometheus 服务
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus_config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus_config/alert.rules:/etc/prometheus/alert.rules:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    restart: unless-stopped
+
+  # 这个 test-server 服务是一个简单的 HTTP 服务器，用于模拟一些测试数据的生成和暴露，供 Prometheus 来抓取和监控。
+  test-server:
+    build:
+      context: .
+      dockerfile: ./prometheusTestServer/Dockerfile
+    container_name: test-server
+    ports:
+      - "2112:2112"
+    restart: unless-stopped
+
 networks:
   default:
     name: milvus

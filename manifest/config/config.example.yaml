@@ -1,0 +1,39 @@
+# https://goframe.org/docs/web/server-config-file-template
+server:
+  address: ":8000"
+  openapiPath: "/api.json"
+  swaggerPath: "/swagger"
+
+# https://goframe.org/docs/core/glog-config  这个是 goframe 的日志配置，具体的配置项可以参考链接的文档
+logger:
+  level: "all"
+  stdout: true
+
+# https://www.volcengine.com/docs/82379/1399008 去这里开通 火山引擎的API权限，这里虽然是deepseek但不是官方的，而是火山引擎的。而且你还需要开通对应的 Model权限
+# 这里的模型model 需要你根据自己的开通的填写即可，不一定非要是 deepseek-v3-2-251201 这个模型，具体的模型名称可以在你开通权限后在控制台查看到。
+# https://www.volcengine.com/docs/82379/1330310?lang=zh#f44ceef7 这里可以查看具有 工具调用能力的 model Id 列表
+ds_think_chat_model:
+  api_key: "火山引擎的APi_KEY"
+  base_url: "https://ark.cn-beijing.volces.com/api/v3"
+  model: "deepseek-v3-2-251201"
+
+ds_quick_chat_model:
+  api_key: "火山引擎的APi_KEY"
+  base_url: "https://ark.cn-beijing.volces.com/api/v3"
+  model: "deepseek-v3-2-251201"
+
+# https://bailian.console.aliyun.com/cn-beijing?tab=home#/home 这里是阿里百炼的控制台地址，你需要在这里开通对应的API权限，并且获取到对应的api_key和base_url，model也是需要根据你开通的权限来选择的。
+doubao_embedding_model:
+  api_key: "这里使用阿里百炼的api"
+  base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+  model: "text-embedding-v4"
+
+# 这个需要你自己搭建 ollama 的服务，具体的搭建方式可以参考 ollama 的官方文档 https://ollama.com/download，搭建完成后，你需要将 base_url 配置成你自己的地址，model 也是需要根据你自己部署的模型来选择的。
+ollama_embedding_model: 
+  model: "nomic-embed-text"
+  base_url: "http://localhost:11434"
+
+
+file_dir: "./docs"
+
+

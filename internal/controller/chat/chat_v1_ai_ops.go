@@ -1,13 +1,14 @@
 package chat
 
 import (
-	"SuperBizAgent/api/chat/v1"
+	v1 "SuperBizAgent/api/chat/v1"
 	"SuperBizAgent/internal/ai/agent/plan_execute_replan"
 	"context"
 	"errors"
 )
 
 func (c *ControllerV1) AIOps(ctx context.Context, req *v1.AIOpsReq) (res *v1.AIOpsRes, err error) {
+	// 构造AI运维分析的任务描述，Plan-Execute-Replan模型将根据此指令调用工具
 	query := `
 "1. 你是一个智能的服务告警分析助手,首先调用工具query_prometheus_alerts获取所有活跃的告警。"
 "2. 分别根据告警的名称调用工具query_internal_docs，获取告警名对应的处理方案。"
@@ -24,6 +25,7 @@ func (c *ControllerV1) AIOps(ctx context.Context, req *v1.AIOpsReq) (res *v1.AIO
 ## 结论
 `
 
+	// 调用Plan-Execute-Replan流程，完成复杂运维分析任务
 	resp, detail, err := plan_execute_replan.BuildPlanAgent(ctx, query)
 	if err != nil {
 		return nil, err

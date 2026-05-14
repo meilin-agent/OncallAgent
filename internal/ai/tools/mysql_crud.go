@@ -25,6 +25,7 @@ func NewMysqlCrudTool() tool.InvokableTool {
 		"mysql_crud",
 		"Execute SQL queries against the MySQL database and return results in JSON format. Use this tool when you need to query, insert, update or delete data from the database. The results will be formatted as JSON for easy parsing.",
 		func(ctx context.Context, input *MysqlCrudInput, opts ...tool.Option) (output string, err error) {
+			log.Printf("MySQL CRUD tool called with input: DSN=%s, SQL=%s, OperateType=%s", input.DSN, input.SQL, input.OperateType)
 			// 1. 建立数据库连接
 			db, err := gorm.Open(mysql.Open(input.DSN), &gorm.Config{})
 			if err != nil {

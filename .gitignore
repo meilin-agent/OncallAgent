@@ -16,5 +16,5 @@ manifest/output/
 temp/
 temp.yaml
 bin
-
 manifest/docker/volumes
+manifest/config/config.yaml

@@ -1,8 +1,8 @@
 package common
 
 const (
-	MilvusDBName         = "agent"
-	MilvusCollectionName = "biz"
+	MilvusDBName         = "agent" // 数据库名
+	MilvusCollectionName = "biz"   // 表名
 )
 
 var FileDir = "./docs/"

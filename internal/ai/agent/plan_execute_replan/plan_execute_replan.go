@@ -10,6 +10,7 @@ import (
 )
 
 func BuildPlanAgent(ctx context.Context, query string) (string, []string, error) {
+	// 构建三阶段Agent：Planner、Executor、Replanner
 	planAgent, err := NewPlanner(ctx)
 	if err != nil {
 		return "", []string{}, err
@@ -22,6 +23,7 @@ func BuildPlanAgent(ctx context.Context, query string) (string, []string, error)
 	if err != nil {
 		return "", []string{}, err
 	}
+
 	planExecuteAgent, err := planexecute.New(ctx, &planexecute.Config{
 		Planner:       planAgent,
 		Executor:      executeAgent,
@@ -31,26 +33,35 @@ func BuildPlanAgent(ctx context.Context, query string) (string, []string, error)
 	if err != nil {
 		return "", []string{}, fmt.Errorf("build PlanExecuteAgent Error: %v", err)
 	}
+
+	// 创建运行器，依次执行复杂任务迭代过程
 	r := adk.NewRunner(ctx, adk.RunnerConfig{
 		Agent: planExecuteAgent,
 	})
 	iter := r.Query(ctx, query)
 	var lastMessage adk.Message
 	var detail []string
+
 	for {
 		event, ok := iter.Next()
 		if !ok {
 			break
 		}
+
+		// 这里打印事件，便于调试和查看每次迭代结果
 		fmt.Println("------------- Event -------------")
 		prints.Event(event)
+
 		if event.Output != nil {
 			lastMessage, _, err = adk.GetMessage(event)
 			detail = append(detail, lastMessage.String())
 		}
 	}
+
 	if lastMessage == nil {
 		return "", []string{}, fmt.Errorf("get lastMessage Error")
 	}
+
+	// 返回最终生成的内容和所有步骤详情
 	return lastMessage.Content, detail, nil
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"SuperBizAgent/internal/ai/agent/knowledge_index_pipeline"
-	loader2 "SuperBizAgent/internal/ai/loader"
 	"SuperBizAgent/utility/client"
 	"SuperBizAgent/utility/common"
 	"SuperBizAgent/utility/log_call_back"
@@ -12,8 +11,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	loader2 "SuperBizAgent/internal/ai/loader"
+
 	"github.com/cloudwego/eino/components/document"
 	"github.com/cloudwego/eino/compose"
+	"github.com/milvus-io/milvus/client/v2/milvusclient"
 )
 
 func main() {
@@ -22,9 +24,21 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	err = filepath.WalkDir("./docs", func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return fmt.Errorf("walk dir failed: %w", err)
+
+	loader, err := loader2.NewFileLoader(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	cli, err := client.NewMilvusClient(ctx)
+	if err != nil {
+		panic(err)
+	}
+	defer cli.Close(ctx)
+
+	err = filepath.WalkDir("./docs", func(path string, d fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return fmt.Errorf("walk dir failed: %w", walkErr)
 		}
 		if d.IsDir() {
 			return nil
@@ -36,41 +50,44 @@ func main() {
 		}
 
 		fmt.Printf("[start] indexing file: %s\n", path)
-		// 删除biz数据metadata中_source一样的数据
-		loader, err := loader2.NewFileLoader(ctx)
-		if err != nil {
-			return err
-		}
+
 		docs, err := loader.Load(ctx, document.Source{URI: path})
 		if err != nil {
 			return err
 		}
-		cli, err := client.NewMilvusClient(ctx)
+		if len(docs) == 0 {
+			fmt.Printf("[skip] no docs loaded from: %s\n", path)
+			return nil
+		}
+
+		// 查询所有 metadata 中 _source 一样的数据并删除
+		expr := fmt.Sprintf(`metadata["_source"] == "%s"`, docs[0].MetaData["_source"])
+		queryOpt := milvusclient.NewQueryOption(common.MilvusCollectionName).
+			WithFilter(expr).
+			WithOutputFields("id")
+		queryResult, err := cli.Query(ctx, queryOpt)
 		if err != nil {
 			return err
 		}
-		// 查询所有metadata中_source一样的数据并删除
-		expr := fmt.Sprintf(`metadata["_source"] == "%s"`, docs[0].MetaData["_source"])
-		queryResult, err := cli.Query(ctx, common.MilvusCollectionName, []string{}, expr, []string{"id"})
-		if err != nil {
-			return err
-		} else if len(queryResult) > 0 {
-			// 提取所有需要删除的id
-			var idsToDelete []string
-			for _, column := range queryResult {
-				if column.Name() == "id" {
-					for i := 0; i < column.Len(); i++ {
-						id, err := column.GetAsString(i)
-						if err == nil {
-							idsToDelete = append(idsToDelete, id)
-						}
-					}
-				}
+
+		if queryResult.Len() > 0 {
+			idCol := queryResult.GetColumn("id")
+			if idCol == nil {
+				return fmt.Errorf("milvus query returned %d rows but missing output field 'id'", queryResult.Len())
 			}
-			// 删除这些数据
+
+			idsToDelete := make([]string, 0, idCol.Len())
+			for i := 0; i < idCol.Len(); i++ {
+				id, err := idCol.GetAsString(i)
+				if err != nil {
+					continue
+				}
+				idsToDelete = append(idsToDelete, id)
+			}
+
 			if len(idsToDelete) > 0 {
-				deleteExpr := fmt.Sprintf(`id in ["%s"]`, strings.Join(idsToDelete, `","`))
-				err = cli.Delete(ctx, common.MilvusCollectionName, "", deleteExpr)
+				deleteOpt := milvusclient.NewDeleteOption(common.MilvusCollectionName).WithStringIDs("id", idsToDelete)
+				_, err = cli.Delete(ctx, deleteOpt)
 				if err != nil {
 					fmt.Printf("[warn] delete existing data failed: %v\n", err)
 				} else {
@@ -78,12 +95,17 @@ func main() {
 				}
 			}
 		}
+
 		// 重新构建
 		ids, err := r.Invoke(ctx, document.Source{URI: path}, compose.WithCallbacks(log_call_back.LogCallback(nil)))
 		if err != nil {
-			return fmt.Errorf("invoke index graph failed: %w", err)
+			fmt.Printf("[error] invoke index graph failed: %v\n", err)
+			return err
 		}
 		fmt.Printf("[done] indexing file: %s, len of parts: %d，%s\n", path, len(ids), ids)
 		return nil
 	})
+	if err != nil {
+		panic(err)
+	}
 }
