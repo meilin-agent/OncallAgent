@@ -1,75 +1,109 @@
-# 智能Oncall助手系统架构与实现流程分析
+---
+typora-copy-images-to: ./imgs
+---
+
+# 智能 OnCall Agent 项目 ｜ 大模型Agent开发项目
+
+简单来说，是一个基于AI的企业级运维自动化助手，项目背景是解决实际企业级问题的，并不是玩具项目。目的是解决传统 Oncall 值班中，人工值守和排查问题的低效痛点，通过整合【知识库Agent】、【对话Agent】、【运维Agent】三大核心Agent能力，实现问题自动应答和故障智能排查的一体化服务，降低团队 Oncall的人力成本，提升团队效率。
+
+本文章的目的就是对这个整个代码结构、功能实现做一个自我分析和总结，分享于大家。
+
+项目地址：https://github.com/gofish2020/OncallAgent 欢迎学习 Fork && Star
 
 ## 一、系统概览
 
-**系统名称**：SuperBizAgent（智能OnCall助手）  
+**系统名称**：智能 OnCall Agent 项目
 **核心功能**：基于AI的告警处理、智能问答与运维分析  
 **技术栈**：  
-- 后端：Go + GoFrame + Eino AI框架
-- 前端：原生JavaScript + HTML/CSS
-- AI服务：Qwen3向量模型（配置中的doubao_embedding_model，其实是千问3）/Ollama本地向量模型/DeepSeek模型
-- 向量数据库：`Milvus` （需要去 `manifest/docker`目录下，执行 `docker-compose up -d` 将 `Milvus` 向量数据库启动起来）
+
+- 后端：Go + GoFrame + Eino AI框架（这个字节开源的 AI Agent开发的框架，文档：https://www.cloudwego.io/zh/docs/eino/）
+- 前端：原生JavaScript + HTML/CSS（这里的前端是通过 vibe coding写的，不是本文章的重点）
+- AI服务：Qwen3向量模型（配置中的doubao_embedding_model，其实是千问3的向量模型）、Ollama本地向量模型、DeepSeek大模型
+- 向量数据库：`Milvus`
 - 日志系统：腾讯云CLS（通过MCP协议）
+
+
+
+## 二、环境配置
+
+### 下载代码
+
+```bash
+git clone https://github.com/gofish2020/OncallAgent.git
+```
+
+### 启动 docker
+
+```bash
+cd ./manifest/docker
+docker-compose up -d
+```
+
+### 配置 config.yaml 
+
+```bash
+cd ./manifest/config
+# 先复制一份
+cp config.example.yaml config.yaml
+
+# 按照 config.yaml 中的注释信息，把各种API Key 自行申请即可（！！！重要！！！）
+```
+
+### 安装 Ollama
+
+因为代码中用的本地的 `Ollama`来运行的 `nomic-embed-text`这个向量模型（主要是为了省钱）。这里我把 Ollama 的完整安装这里写下。 Ollama 你可以理解为 Docker，Docker是给开发好的软件提供一个运行环境，Ollama是给模型的运行提供一个独立的运行环境
+
+```bash
+# 先去这里下载 Ollama,并且安装
+https://ollama.com/download
+# 这里有很多本地部署模型、Embedding 等....
+https://ollama.com/search?c=embedding
+# 在命令行执行如下命令，下载 nomic-embed-text 这个向量模型（下载前记得把 ollama 这个程序启动起来，就是点击下图标运行）
+ollama pull nomic-embed-text
+
+```
+
+如果你希望使用其他的 Embedding模型，用上面的 pull 自行下载即可，不过记得同步更新 `config.yaml`中的模型名字
+
+```yaml
+ollama_embedding_model: 
+  model: "nomic-embed-text" # 这里的model 名字
+  base_url: "http://localhost:11434"
+```
+
+## 三、启动命令
+
+### 启动后端
+
+```bash
+# 启动后端(在项目目录)
+go run main.go
+# 服务启动在 http://localhost:6872
+```
+
+### 启动前端
+
+```bash
+# 启动前端
+cd SuperBizAgentFrontend
+chmod a+x start.sh
+./start.sh
+# 访问 http://localhost:8000
+```
+
+
 
 ---
 
-## 二、后端系统架构
+## 四、后端系统架构
 
-### 2.1 整体分层架构
+### 4.1 整体分层架构
 
-```
-┌─────────────────────────────────────────────┐
-│        前端 (HTML/JS)                       │
-└────────────┬────────────────────────────────┘
-             │ HTTP/SSE
-             ↓
-┌─────────────────────────────────────────────┐
-│ 路由层 (api/chat/v1)                        │
-├─────────────────────────────────────────────┤
-│ Chat | ChatStream | FileUpload | AIOps     │
-└────────────┬────────────────────────────────┘
-             │
-┌─────────────────────────────────────────────┐
-│ 控制层 (internal/controller/chat)           │
-├─────────────────────────────────────────────┤
-│ ControllerV1: Chat() ChatStream() AIOps()   │
-└────────────┬────────────────────────────────┘
-             │
-┌─────────────────────────────────────────────┐
-│ 业务逻辑层 (internal/logic/chat)            │
-├─────────────────────────────────────────────┤
-│ ChatService | SSEService                    │
-└────────────┬────────────────────────────────┘
-             │
-┌─────────────────────────────────────────────┐
-│ AI管道层 (internal/ai/agent)                │
-├─────────────────────────────────────────────┤
-│ • ChatPipeline（RAG+ReAct对话）             │
-│ • KnowledgeIndexPipeline（知识索引）        │
-│ • PlanExecuteReplan（计划-执行-重规划）     │
-└────────────┬────────────────────────────────┘
-             │
-┌─────────────────────────────────────────────┐
-│ 工具/组件层                                 │
-├─────────────────────────────────────────────┤
-│ • Tools: 告警查询 | 日志查询 | 文档查询等   │
-│ • Models: OpenAI/DeepSeek模型集成          │
-│ • Retriever: Milvus向量检索                │
-│ • Embedder: 向量编码                        │
-└────────────┬────────────────────────────────┘
-             │
-┌─────────────────────────────────────────────┐
-│ 基础设施层                                  │
-├─────────────────────────────────────────────┤
-│ • Memory: 会话内存管理                      │
-│ • Client: Milvus/MySQL连接                 │
-│ • Middleware: CORS/Response处理             │
-└─────────────────────────────────────────────┘
-```
+![image-20260515003232381](./imgs/image-20260515003232381.png)
 
-### 2.2 主入口点
+### 4.2 主入口点
 
-**文件**：[main.go](main.go)
+**文件**：`main.go`
 
 ```go
 func main() {
@@ -95,9 +129,9 @@ func main() {
 
 ---
 
-### 2.3 API端点与请求类型
+### 4.3 请求类型
 
-**文件**：[api/chat/v1/chat.go](api/chat/v1/chat.go)
+**文件**：`api/chat/v1/chat.go`
 
 | 端点 | 方法 | 功能 | 请求类型 |
 |------|------|------|---------|
@@ -109,29 +143,37 @@ func main() {
 **核心请求结构**：
 ```go
 type ChatReq struct {
+  	g.Meta   `path:"/chat" method:"post" summary:"对话"`
     Id       string  // 会话ID
     Question string  // 用户问题
 }
 
 type ChatStreamReq struct {
+  	g.Meta   `path:"/chat_stream" method:"post" summary:"流式对话"`
     Id       string  // 会话ID
     Question string  // 用户问题
 }
 
 type AIOpsReq struct {
-    // AI运维分析的统一请求入口
+  	// AI运维分析的统一请求入口
+  	g.Meta `path:"/ai_ops" method:"post" summary:"AI运维"`
+    
+}
+
+type FileUploadReq struct {
+	g.Meta `path:"/upload" method:"post" mime:"multipart/form-data" summary:"文件上传"`
 }
 ```
 
 ---
 
-### 2.4 控制层实现
+### 4.4 控制层实现
 
-**文件**：[internal/controller/chat/](internal/controller/chat/)
+**文件**：internal/controller/chat/
 
-#### 2.4.1 Chat - 快速对话接口
+#### 4.4.1 Chat - 快速对话接口
 
-**文件**：[chat_v1_chat.go](internal/controller/chat/chat_v1_chat.go)
+**文件**：chat_v1_chat.go
 
 ```
 请求流程：
@@ -149,6 +191,7 @@ type AIOpsReq struct {
 ```
 
 **关键代码逻辑**：
+
 ```go
 func (c *ControllerV1) Chat(ctx context.Context, req *v1.ChatReq) (res *v1.ChatRes, err error) {
     userMessage := &chat_pipeline.UserMessage{
@@ -168,9 +211,11 @@ func (c *ControllerV1) Chat(ctx context.Context, req *v1.ChatReq) (res *v1.ChatR
 }
 ```
 
-#### 2.4.2 ChatStream - 流式对话接口
 
-**文件**：[chat_v1_chat_stream.go](internal/controller/chat/chat_v1_chat_stream.go)
+
+#### 4.4.2 ChatStream - 流式对话接口
+
+**文件**：chat_v1_chat_stream.go
 
 ```
 请求流程：
@@ -190,13 +235,13 @@ func (c *ControllerV1) Chat(ctx context.Context, req *v1.ChatReq) (res *v1.ChatR
 ```
 
 **数据流特点**：
-- 使用WebSocket或SSE实现服务器推送
+- 使用`SSE`实现服务器推送
 - 实时流式返回AI的逐块生成结果
 - 在流式传输中维持客户端连接
 
-#### 2.4.3 AIOps - AI运维分析接口
+#### 4.4.3 AIOps - AI运维分析接口
 
-**文件**：[chat_v1_ai_ops.go](internal/controller/chat/chat_v1_ai_ops.go)
+**文件**：chat_v1_ai_ops.go
 
 ```
 执行流程：
@@ -238,55 +283,32 @@ func (c *ControllerV1) Chat(ctx context.Context, req *v1.ChatReq) (res *v1.ChatR
 
 ---
 
-### 2.5 AI管道系统（核心智能引擎）
+### 4.5 AI Agent代码结构
 
-#### 2.5.1 Chat Pipeline - 对话管道
+这里的 `Agent`的构架，都是使用的 字节的框架 `Eino`。读音类似于：` I know`。
 
-**文件**：[internal/ai/agent/chat_pipeline/orchestration.go](internal/ai/agent/chat_pipeline/orchestration.go)
+**最重要注意的点在于，每个节点的【输入数据类型】要和前一个节点的【输出数据类型】保持一致。**
+
+#### 4.5.1 Chat Pipeline - 对话Agent
+
+**文件**：internal/ai/agent/chat_pipeline/orchestration.go
 
 **架构图**：
-```
-                    START
-                      ↓
-         ┌────────────┴────────────┐
-         ↓                         ↓
-   InputToRag                InputToChat
-   (Query提取)              (上下文构建)
-         ↓                         ↓
-         ↓          ┌──────────────┘
-         ↓          ↓
-   MilvusRetriever  [获取向量数据库中的相关文档]
-   (RAG检索)
-         ↓
-         └──────────────┐
-                        ↓
-                  ChatTemplate
-                  (提示词模板)
-                  含Context信息：
-                  • System Prompt
-                  • 对话历史
-                  • 用户Query
-                  • 检索到的文档
-                        ↓
-                  ReactAgent
-                  (LLM推理+工具调用)
-                  • 使用DeepSeek V3 Quick
-                  • 支持函数调用
-                        ↓
-                       END
-```
+
+![image-20260515033446303](./imgs/image-20260515033446303.png)
 
 **管道流程**：
 
 | 步骤 | 节点 | 功能 | 输入 | 输出 |
 |------|------|------|------|------|
-| 1 | InputToRag | 提取查询词 | UserMessage | Query字符串 |
-| 2 | InputToChat | 构建上下文 | UserMessage | {content, history, date} |
-| 3 | MilvusRetriever | 向量检索 | Query | 相关文档列表 |
-| 4 | ChatTemplate | 组织提示词 | docs + history + query | 格式化消息 |
-| 5 | ReactAgent | LLM推理 | 格式化消息 | 最终回复 |
+| 1 | InputToRag | Query 提取 | UserMessage | query string |
+| 2 | InputToChat | 上下文构建 | UserMessage | {content, history, date} |
+| 3 | MilvusRetriever | RAG 检索 | query string | 相关文档列表 docments |
+| 4 | ChatTemplate | 提示词模板构建 | docments + history + content + date | 格式化消息 []*schema.Message |
+| 5 | ReactAgent | LLM推理+工具调用 | 格式化消息 []*schema.Message | *schema.Message |
 
 **关键代码**：
+
 ```go
 func BuildChatAgent(ctx context.Context) compose.Runnable[*UserMessage, *schema.Message] {
     g := compose.NewGraph[*UserMessage, *schema.Message]()
@@ -311,80 +333,31 @@ func BuildChatAgent(ctx context.Context) compose.Runnable[*UserMessage, *schema.
 }
 ```
 
-**系统提示词（关键）**：
-
-```yaml
-角色: 对话小助手
-核心能力:
-  - 上下文理解与对话
-  - 网络搜索获取信息
-  - 调用工具辅助
-互动指南:
-  - 完全理解用户需求
-  - 清晰简洁地回复
-  - 参考相关文档
-输出要求:
-  - 易读、结构良好
-  - 纯文本格式（无Markdown）
-  - 包含当前日期和相关文档内容
-```
-
 ---
 
-#### 2.5.2 Knowledge Index Pipeline - 知识索引管道
+#### 4.5.2 Knowledge Index Pipeline - 知识库构建Agent
 
-**文件**：[internal/ai/agent/knowledge_index_pipeline/orchestration.go](internal/ai/agent/knowledge_index_pipeline/orchestration.go)
+**文件**：internal/ai/agent/knowledge_index_pipeline/orchestration.go
 
 **用途**：处理知识库构建，从文件到向量数据库
 
-```
-FILE INPUT (Markdown文件)
-    ↓
-[FileLoader] - 加载文件内容
-    ↓
-[MarkdownSplitter] - 按Markdown结构分割
-    ↓
-[Embedding] - 转换为向量
-    ↓
-[MilvusIndexer] - 存入向量数据库
-    ↓
-OUTPUT: 索引IDs列表
-```
+![image-20260515031410672](./imgs/image-20260515031410672.png)
 
 **数据处理流程**：
 1. **加载**：从文件系统读取Markdown文档
 2. **分割**：按Markdown标题、段落分割成块
-3. **向量化**：使用Embedder（豆宝Embedding）将文本转为向量
+3. **向量化**：使用Embedder（ Ollama Embedding）将文本转为向量
 4. **索引**：将向量和元数据存入Milvus
 
 ---
 
-#### 2.5.3 Plan-Execute-Replan Pipeline - 规划-执行-重规划
+#### 4.5.3 Plan-Execute-Replan Pipeline - 运维 Agent
 
-**文件**：[internal/ai/agent/plan_execute_replan/plan_execute_replan.go](internal/ai/agent/plan_execute_replan/plan_execute_replan.go)
+**文件**：internal/ai/agent/plan_execute_replan/plan_execute_replan.go
 
 **架构**：
 
-```
-Query (用户的复杂请求)
-  ↓
-[Planner - DeepSeek V3思维模型]
-  • 深度思考问题
-  • 生成详细执行计划
-  • 输出：Plan
-  ↓
-[Executor - DeepSeek V3 Quick模型]
-  • 执行计划步骤
-  • 调用可用工具
-  • 获取中间结果
-  ↓
-[Replanner - 评估与重规划]
-  • 检查执行结果
-  • 决定是否继续、修改或结束
-  • 支持最多20次迭代
-  ↓
-Final Output (最终分析报告)
-```
+![image-20260515040021042](./imgs/image-20260515040021042.png)
 
 **执行流程详解**：
 
@@ -418,11 +391,11 @@ func BuildPlanAgent(ctx, query string) (string, []string, error) {
 
 ---
 
-### 2.6 工具系统
+### 4.6 工具系统
 
-**位置**：[internal/ai/tools/](internal/ai/tools/)
+**位置**：internal/ai/tools/
 
-#### 2.6.1 Query Internal Docs Tool - 内部文档查询
+#### 4.6.1 Query Internal Docs Tool - 内部文档查询
 
 ```go
 func NewQueryInternalDocsTool() tool.InvokableTool {
@@ -438,7 +411,7 @@ func NewQueryInternalDocsTool() tool.InvokableTool {
 2. Milvus向量相似度检索
 3. 返回Top-K相关文档
 
-#### 2.6.2 Query Metrics Alerts Tool - 告警查询
+#### 4.6.2 Query Metrics Alerts Tool - 告警查询
 
 ```go
 type PrometheusAlert struct {
@@ -455,23 +428,7 @@ func queryPrometheusAlerts() ([]SimplifiedAlert, error) {
 }
 ```
 
-**返回格式**：
-```json
-{
-    "success": true,
-    "alerts": [
-        {
-            "alert_name": "HighCPU",
-            "description": "CPU使用率过高",
-            "state": "firing",
-            "active_at": "2025-10-29T08:48:42Z",
-            "duration": "2h30m15s"
-        }
-    ]
-}
-```
-
-#### 2.6.3 MySQL CRUD Tool - 数据库操作
+#### 4.6.3 MySQL CRUD Tool - 数据库操作
 
 ```go
 type MysqlCrudInput struct {
@@ -486,7 +443,7 @@ type MysqlCrudInput struct {
 - 执行前需用户确认
 - 结果JSON格式返回
 
-#### 2.6.4 Log MCP Tool - 日志查询
+#### 4.6.4 Log MCP Tool - 日志查询
 
 **实现方式**：通过Model Context Protocol(MCP)连接腾讯云日志服务
 
@@ -508,47 +465,36 @@ func GetLogMcpTool() ([]tool.BaseTool, error) {
 
 ---
 
-### 2.7 向量检索与Embedding
+### 4.7  召回器
 
-**Retriever** - [internal/ai/retriever/retriever.go](internal/ai/retriever/retriever.go)
+**Retriever** - internal/ai/retriever/retriever.go
 
 ```go
 func NewMilvusRetriever(ctx context.Context) retriever.Retriever {
     cli := client.NewMilvusClient(ctx)     // Milvus连接
-    eb := embedder.OllamaEmbedding(ctx)    // 豆宝向量编码器
+    eb := embedder.OllamaEmbedding(ctx)    // Ollama 向量编码器
     
     // 创建检索器配置
-    config := &milvus.RetrieverConfig{
-        Client:      cli,
-        Collection: "知识库集合名",
-        VectorField: "vector",
-        OutputFields: []string{"id", "content", "metadata"},
-        TopK: 1,  // 返回最相关的1条文档
-        Embedding: eb,
-    }
-    
-    return milvus.NewRetriever(ctx, config)
+    config :=  &milvus2.RetrieverConfig{
+      Client:      cli,
+      VectorField: "vector",
+      Collection:  common.MilvusCollectionName,
+      TopK:        3,
+      SearchMode:  search_mode.NewApproximate(milvus2.L2),
+      Embedding:   eb,
+	}
+ 
+    return milvus2.NewRetriever(ctx, config)
 }
 ```
 
-**流程**：
-```
-用户Query
-  ↓
-Embedding(豆宝模型)
-  ↓
-生成Query向量
-  ↓
-Milvus相似度检索(TopK=1)
-  ↓
-返回最相关文档
-```
+**NewMilvusRetriever**：用于构建 `Milvus`的检索对象，作为图`Graph`中的一个节点
 
 ---
 
-### 2.8 会话内存管理
+### 4.8 会话内存管理
 
-**文件**：[utility/mem/mem.go](utility/mem/mem.go)
+**文件**：utility/mem/mem.go
 
 **设计**：基于会话ID的内存缓存
 
@@ -572,9 +518,9 @@ GetMessages()     // 获取当前窗口内的消息
 
 ---
 
-### 2.9 LLM模型集成
+### 4.9 LLM模型集成
 
-**文件**：[internal/ai/models/open_ai.go](internal/ai/models/open_ai.go)
+**文件**：internal/ai/models/open_ai.go
 
 **支持两个模型版本**：
 
@@ -596,23 +542,12 @@ ds_quick_chat_model:
   base_url: "https://api.deepseek.com"
 ```
 
-### 3.0 向量模型
+### 5.0 向量模型
 
-配置文件中有两个向量模型：
+配置文件中有两个向量模型：（代码中都是使用的 ollama_embedding_model），所以另外一个不配置也没关系
 - 阿里的百炼模型，你自己需要登录 https://bailian.console.aliyun.com/cn-beijing?tab=home#/home 官网，去获取 `api key` 并且还需要把 向量模型 `text-embedding-v4`使用权限开通了即可。
 
-- 当前也可以选择安装 `Ollama` 使用本地部署的向量模型（我这里用的这种方式）
-  ```bash
-    # Ollama的下载地址
-    https://ollama.com/download
-
-    # 如果觉得 Embedding的模型不够好，这里还有更多的模型，记得修改配置中的模型名称即可
-    https://ollama.com/search?c=embedding
-
-    # 启动 Ollama(直接点击你安装好的程序，来启动) 并下载 nomic-embed-text 模型（这里下载好会自动运行这个模型的）
-    ollama pull nomic-embed-text
-
-  ```
+-  `Ollama` 本地部署的向量模型（具体安装参考上面）
 
 **配置方式**（从config.yaml）：
 
@@ -626,396 +561,13 @@ ollama_embedding_model:
   model: "nomic-embed-text"
   base_url: "http://localhost:11434"
 ```
----
 
-## 三、前端系统详解
-
-### 3.1 前端架构
-
-**文件**：[SuperBizAgentFrontend/](SuperBizAgentFrontend/)
-
-```
-HTML结构 (index.html)
-  ├─ 侧边栏 (Sidebar)
-  │  ├─ 新建对话按钮
-  │  └─ 近期对话历史列表
-  ├─ 主内容区 (Main Content)
-  │  ├─ AI Ops按钮
-  │  ├─ 欢迎信息
-  │  ├─ 消息展示区
-  │  └─ 聊天输入区
-  │     ├─ 文本输入框
-  │     ├─ 文件上传工具
-  │     ├─ 对话模式选择器
-  │     └─ 发送按钮
-  └─ 加载遮罩层 (Loading Overlay)
-
-应用逻辑 (app.js)
-  ├─ 初始化 (constructor)
-  ├─ DOM元素管理
-  ├─ 事件绑定
-  ├─ API通信
-  ├─ UI渲染
-  └─ 数据持久化 (LocalStorage)
-```
-
-### 3.2 前端初始化流程
-
-**主类**：`SuperBizAgentApp`
-
-```javascript
-constructor() {
-    this.apiBaseUrl = 'http://localhost:6872/api';
-    this.currentMode = 'quick';  // 对话模式
-    this.sessionId = this.generateSessionId();  // 生成会话ID
-    this.isStreaming = false;
-    this.currentChatHistory = [];  // 当前对话
-    this.chatHistories = this.loadChatHistories();  // 所有历史
-    
-    this.initializeElements();      // 初始化DOM元素
-    this.bindEvents();              // 绑定事件监听
-    this.updateUI();                // 更新界面
-    this.initMarkdown();            // Markdown渲染库初始化
-    this.renderChatHistory();       // 渲染历史列表
-}
-```
-
-### 3.3 对话模式
-
-#### 模式1：快速对话 (quick)
-```
-用户输入
-  ↓
-POST /api/chat {Id, Question}
-  ↓
-等待完整响应
-  ↓
-一次性显示答案
-  ↓
-保存到会话历史
-```
-
-#### 模式2：流式对话 (stream)
-```
-用户输入
-  ↓
-POST /api/chat_stream {Id, Question}
-  ↓
-打开EventSource/SSE连接
-  ↓
-逐块接收数据
-  ↓
-实时渲染每个chunk
-  ↓
-流结束时更新完整历史
-```
-
-### 3.4 前端API集成
-
-**关键方法**：
-
-```javascript
-// 发送聊天消息
-async sendMessage(userQuery) {
-    const requestBody = {
-        Id: this.sessionId,
-        Question: userQuery
-    };
-    
-    if (this.currentMode === 'quick') {
-        // 快速模式：一次性请求
-        const response = await fetch(`${this.apiBaseUrl}/chat`, {
-            method: 'POST',
-            body: JSON.stringify(requestBody)
-        });
-        const data = await response.json();
-        this.displayMessage(data.answer, 'assistant');
-    } 
-    else if (this.currentMode === 'stream') {
-        // 流式模式：使用EventSource
-        const eventSource = new EventSource(
-            `${this.apiBaseUrl}/chat_stream?...`
-        );
-        eventSource.onmessage = (event) => {
-            this.displayStreamChunk(event.data);
-        };
-    }
-}
-
-// 文件上传
-async uploadFile(file) {
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    const response = await fetch(`${this.apiBaseUrl}/upload`, {
-        method: 'POST',
-        body: formData
-    });
-    
-    return response.json();  // {fileName, filePath, fileSize}
-}
-
-// AI运维分析
-async triggerAIOps() {
-    const response = await fetch(`${this.apiBaseUrl}/ai_ops`, {
-        method: 'POST'
-    });
-    
-    const data = await response.json();
-    // 显示分析结果和详细步骤
-}
-```
-
-### 3.5 UI交互逻辑
-
-**消息显示**：
-- 用户消息：右对齐，蓝色背景
-- AI回复：左对齐，灰色背景
-- Markdown渲染：代码块高亮、表格格式化
-
-**对话历史**：
-- 存储在LocalStorage中
-- 每次对话生成UUID作为历史ID
-- 侧边栏显示最近对话列表
-- 点击可恢复历史对话
-
-**加载状态**：
-- 请求期间显示加载遮罩
-- 提示："智能运维分析中，请稍候"
-- 流式对话中逐步隐藏遮罩
 
 ---
 
-## 四、完整数据流示例
+## 六、关键技术点
 
-### 4.1 快速对话流程
-
-```
-╔════════════════════════════════════════════════════════════════════╗
-║                   用户快速对话完整流程                              ║
-╚════════════════════════════════════════════════════════════════════╝
-
-【前端】
-User Input: "生产环境CPU告警怎么处理？"
-  ↓
-App.sendMessage() → POST /api/chat
-  {
-    "Id": "session_uuid_123",
-    "Question": "生产环境CPU告警怎么处理？"
-  }
-
-【后端 - 控制层】
-ControllerV1.Chat()
-  ↓
-【后端 - 业务逻辑】
-构建UserMessage {
-  ID: "session_uuid_123",
-  Query: "生产环境CPU告警怎么处理？",
-  History: [  // 从内存获取前面的对话
-    UserMessage("前面的问题"),
-    SystemMessage("前面的回答")
-  ]
-}
-
-【后端 - AI管道】
-BuildChatAgent() → 构建Eino Graph
-  ↓
-执行图操作：
-
-┌─ InputToRag ─────────────────────────────────┐
-│ input: UserMessage                           │
-│ output: "生产环境CPU告警怎么处理？"            │
-└─ → MilvusRetriever                          ┘
-   • 向量化查询 (豆宝Embedding)
-   • Milvus搜索 (TopK=1)
-   • 返回: [相关文档块]
-     "CPU告警处理步骤:
-      1. 登录监控平台
-      2. 查看进程占用
-      3. 执行告警处理流程..."
-
-┌─ InputToChat ──────────────────────────────────┐
-│ input: UserMessage                            │
-│ output: {                                      │
-│   "content": "生产环境CPU告警怎么处理？",       │
-│   "history": [前面的对话],                     │
-│   "date": "2025-05-10 14:30:00"               │
-│ }                                             │
-└─ → ChatTemplate                              ┘
-   • 组织System Prompt:
-     "# 角色：对话小助手
-      ... [系统提示词]
-      ## 相关文档：
-      CPU告警处理步骤:..."
-   • 组织Chat History
-   • 最终格式化消息
-
-┌──────────────────────────────────────────────┐
-│ ReactAgent (DeepSeek V3 Quick)               │
-│ • 输入：格式化的完整上下文                     │
-│ • 执行：                                      │
-│   - 理解问题                                  │
-│   - 参考检索文档                              │
-│   - 可能调用搜索工具                          │
-│   - 生成回复                                  │
-│ • 输出：schema.Message                        │
-│   Content: "根据内部文档，CPU告警处理流程是：
-│            1. 首先检查当前CPU使用率...
-│            2. 查看占用最高的进程...
-│            3. 决定是否需要重启或优化..."
-└──────────────────────────────────────────────┘
-
-【后端 - 内存管理】
-mem.GetSimpleMemory("session_uuid_123").SetMessages(
-  UserMessage("生产环境CPU告警怎么处理？")
-)
-mem.GetSimpleMemory("session_uuid_123").SetMessages(
-  SystemMessage("根据内部文档，CPU告警处理流程是...")
-)
-
-【返回前端】
-ChatRes {
-  "answer": "根据内部文档，CPU告警处理流程是：
-            1. 首先检查当前CPU使用率...
-            2. 查看占用最高的进程...
-            3. 决定是否需要重启或优化..."
-}
-
-【前端展示】
-显示AI回复在聊天区域
-更新对话历史侧边栏
-保存到LocalStorage
-```
-
----
-
-### 4.2 AI运维分析流程
-
-```
-╔════════════════════════════════════════════════════════════════════╗
-║                   AI运维分析(Plan-Execute-Replan)流程              ║
-╚════════════════════════════════════════════════════════════════════╝
-
-【用户操作】
-点击 "AI Ops" 按钮
-  ↓
-POST /api/ai_ops
-
-【后端 - AIOps控制器】
-ControllerV1.AIOps()
-  ↓
-构造任务Query:
-"1. 获取所有活跃告警
- 2. 查询每个告警的处理文档
- 3. 查询相关日志
- 4. 生成分析报告"
-
-【执行 Plan-Execute-Replan】
-
-┌─────────────────────────────────────────┐
-│【第1阶段】Planner (DeepSeek V3思维)      │
-└─────────────────────────────────────────┘
-输入: Query字符串
-  ↓
-深度思考并规划:
-"
-计划步骤:
-Step1: 调用query_prometheus_alerts获取告警列表
-Step2: For each alert:
-       - 调用query_internal_docs查询处理方案
-       - 调用query_log查询相关日志
-Step3: 汇总分析并生成报告
-"
-输出: Plan对象
-
-┌─────────────────────────────────────────┐
-│【第2阶段】Executor (DeepSeek V3 Quick)   │
-└─────────────────────────────────────────┘
-输入: Plan
-
-执行步骤 (循环 ≤ 20次):
-
-迭代1:
-  工具调用: query_prometheus_alerts()
-  返回: [
-    {alertname: "HighCPU", state: "firing"},
-    {alertname: "HighMemory", state: "firing"},
-    {alertname: "DiskFull", state: "pending"}
-  ]
-
-迭代2-4: For each alert:
-  工具调用: query_internal_docs("HighCPU告警处理")
-  返回: "
-    CPU告警处理方案:
-    1. 登录监控平台
-    2. 查看占用进程
-    3. 执行以下处理...
-  "
-
-迭代5-7: 查询相关日志
-  工具调用: query_log(query="HighCPU相关日志", region="ap-guangzhou")
-  返回: [日志片段...]
-
-【继续迭代...】
-
-┌─────────────────────────────────────────┐
-│【第3阶段】Replanner (重规划)              │
-└─────────────────────────────────────────┘
-• 检查上一步执行结果
-• 评估是否完成所有计划
-• 若未完成，修改计划继续迭代
-• 若已完成或达到最大迭代数，结束
-
-【生成最终输出】
-最终Message Content:
-"
-告警分析报告
----
-# 告警处理详情
-
-## 活跃告警清单
-1. HighCPU (firing 2h30m)
-2. HighMemory (firing 1h15m)
-3. DiskFull (pending 30m)
-
-## 告警根因分析1 (HighCPU)
-根据日志分析，该告警由以下原因触发：
-- Java进程占用CPU 85%
-- 原因：大量并发请求
-
-## 处理方案执行1
-按照内部文档流程:
-1. 登录平台 ✓
-2. 确认进程 ✓
-3. 执行优化 ✓
-
-[...继续其他告警...]
-
-## 结论
-已处理3个告警，建议继续监控。
-"
-
-【返回前端】
-AIOpsRes {
-  "result": "告警分析报告 ...",
-  "detail": [
-    "Step1: 查询告警 [成功]",
-    "Step2: 查询CPU告警文档 [成功]",
-    "...",
-    "生成最终报告 [成功]"
-  ]
-}
-
-【前端展示】
-显示分析结果
-展开详细步骤
-```
-
----
-
-## 五、关键技术点
-
-### 5.1 RAG（检索增强生成）
+### 6.1 RAG（检索增强生成）
 
 **三个核心步骤**：
 
@@ -1025,7 +577,7 @@ AIOpsRes {
 | 增强(Augment) | 将文档嵌入到Prompt | 提供LLM上下文 |
 | 生成(Generate) | LLM根据上下文回答 | 基于知识库的准确回答 |
 
-### 5.2 Plan-Execute-Replan模式
+### 6.2 Plan-Execute-Replan模式
 
 **核心思想**：将复杂任务分解为规划、执行、重规划的循环过程
 
@@ -1035,7 +587,7 @@ AIOpsRes {
 - 容错性和自适应性强
 - 适用于运维自动化场景
 
-### 5.3 工具调用集成
+### 6.3 工具调用集成
 
 **架构特点**：
 - 基于Eino框架的工具调用
@@ -1043,75 +595,13 @@ AIOpsRes {
 - 工具结果自动注入到LLM上下文中
 - 实现AI与外部系统的无缝集成
 
-### 5.4 会话管理
+### 6.4 会话管理
 
 **设计理念**：
 - 基于会话ID的隔离存储
 - 滑动窗口机制控制内存使用
 - 保持对话连续性和上下文相关性
 - 支持多并发对话场景
-
----
-
-## 六、部署与配置
-
-### 6.1 环境依赖
-
-**后端**：
-- Go 1.21+
-- Milvus向量数据库
-- Prometheus监控系统
-- MySQL数据库
-- 腾讯云CLS日志服务
-
-**前端**：
-- 现代浏览器（支持ES6+）
-- 本地开发服务器（可选）
-
-### 6.2 配置文件
-
-**位置**：[hack/config.yaml](hack/config.yaml)
-
-**关键配置项**：
-```yaml
-# AI模型配置
-ds_think_chat_model:
-  model: "deepseek-reasoner"
-  api_key: "${DEEPSEEK_API_KEY}"
-  base_url: "https://api.deepseek.com"
-
-ds_quick_chat_model:
-  model: "deepseek-chat"
-  api_key: "${DEEPSEEK_API_KEY}"
-  base_url: "https://api.deepseek.com"
-
-# 向量数据库
-milvus:
-  address: "localhost:19530"
-  collection: "knowledge_base"
-
-# MCP服务器
-mcp_server:
-  url: "http://localhost:3000"
-  region: "ap-guangzhou"
-  topic_id: "869830db-a055-4479-963b-3c898d27e755"
-```
-
-### 6.3 启动命令
-
-**后端服务**：
-```bash
-cd /path/to/project
-go run main.go
-# 服务启动在 http://localhost:6872
-```
-
-**前端开发**：
-```bash
-cd SuperBizAgentFrontend
-python -m http.server 8000  # 或使用其他静态服务器
-# 访问 http://localhost:8000
-```
 
 ---
 

@@ -1,4 +1,4 @@
-# https://goframe.org/docs/web/server-config-file-template
+# goframe的配置文件模板，具体可以参考 https://goframe.org/docs/web/server-config-file-template
 server:
   address: ":8000"
   openapiPath: "/api.json"
@@ -22,7 +22,7 @@ ds_quick_chat_model:
   base_url: "https://ark.cn-beijing.volces.com/api/v3"
   model: "deepseek-v3-2-251201"
 
-# https://bailian.console.aliyun.com/cn-beijing?tab=home#/home 这里是阿里百炼的控制台地址，你需要在这里开通对应的API权限，并且获取到对应的api_key和base_url，model也是需要根据你开通的权限来选择的。
+# https://bailian.console.aliyun.com/cn-beijing?tab=home#/home 这里是阿里百炼的控制台地址，你需要在这里开通对应的API权限，并且获取到对应的api_key，model也是需要根据你开通的权限来选择的。
 doubao_embedding_model:
   api_key: "这里使用阿里百炼的api"
   base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
@@ -32,7 +32,6 @@ doubao_embedding_model:
 ollama_embedding_model: 
   model: "nomic-embed-text"
   base_url: "http://localhost:11434"
-
 
 file_dir: "./docs"
 
