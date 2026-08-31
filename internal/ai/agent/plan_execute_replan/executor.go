@@ -37,6 +37,8 @@ func NewExecutor(ctx context.Context) (adk.Agent, error) {
 				Tools: toolList,
 			},
 		},
-		MaxIterations: 999999,
+		// 内层 ReAct 循环必须有界：无上限时模型在工具间反复打转，
+		// 上下文无限增长导致输出退化、请求长时间不返回
+		MaxIterations: 10,
 	})
 }
