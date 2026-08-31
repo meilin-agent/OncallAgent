@@ -10,6 +10,12 @@ typora-copy-images-to: ./imgs
 
 项目地址：https://github.com/gofish2020/OncallAgent 欢迎学习 Fork && Star
 
+> ### ⚡ 二次开发说明
+>
+> 本仓库由 [meilin-agent](https://github.com/meilin-agent) 基于 [gofish2020/OncallAgent](https://github.com/gofish2020/OncallAgent) 学习与二次开发。
+>
+> 相比原项目，本仓库新增：**6 处真实缺陷修复、9 个单元测试、全链路部署验证**，详见文末「八、二次开发记录」。所有改动均有独立 git 提交，可用 `git log --oneline` 追溯。
+
 ## 一、系统概览
 
 **系统名称**：智能 OnCall Agent 项目
@@ -622,3 +628,34 @@ ollama_embedding_model:
 - 持续学习和知识积累能力
 
 这个系统代表了现代AI运维平台的典型架构，结合了最新的AI技术和传统的运维工具，为智能运维提供了完整的解决方案。
+
+---
+
+## 八、二次开发记录
+
+本节记录 meilin-agent 在本仓库的二次开发工作：缺陷修复、单元测试与部署验证。
+
+### 8.1 缺陷修复（6 处）
+
+| # | 模块 | 问题描述 | 修复方案 | 提交 |
+|---|------|---------|---------|------|
+| 1 | `utility/mem` | `GetMessages()` 返回内部切片别名，调用方修改返回值会污染会话历史，且锁释放后存在数据竞争隐患 | 返回快照副本（复制切片与消息结构体） | `2140d11` |
+| 2 | `internal/logic/sse` | 动态消息直接作为格式串传给 `Writefln`，消息含 `%` 时破坏 SSE 流，且触发新版 Go 的 vet 检查导致编译失败 | 改为 `Writefln("%s", msg)` 纯文本输出 | `2140d11` |
+| 3 | `internal/ai/cmd/knowledge_cmd` | Windows 下 `filepath.WalkDir` 返回反斜杠路径，导致 Milvus 过滤表达式解析失败、知识库索引 panic | `filepath.ToSlash` 路径规范化，Linux 行为不变 | `64fb761` |
+| 4 | `internal/ai/tools/query_log` | 代码中写死的第三方日志 MCP 地址失效（HTTP 500），导致 AIOps 整体报错 | 日志工具改为可选能力：连接失败时优雅降级跳过，并增加 10s 超时保护 | `7fa5202` |
+| 5 | `internal/ai/tools/query_metrics_alerts` | `queryPrometheusAlerts` 首行存在提前 return 的残留调试代码，真实 Prometheus 查询为死代码，工具永远返回空告警 | 移除死代码，实测正确返回 3 条去重后的活跃告警 | `9681cbc` |
+| 6 | `plan_execute_replan/executor` | 内层 ReAct 循环 `MaxIterations=999999` 无上限，上下文无限膨胀导致输出退化（实测 864s / 284 步） | 循环有界化（10 轮）+ 提示词与工具能力对齐，实测 64s / 26 步收敛 | `4c09f93` |
+
+### 8.2 单元测试（9 个用例）
+
+- `utility/mem`：会话内存创建与缓存、滑动窗口裁剪、用户/AI 成对对齐、快照语义（5 个用例）
+- `internal/ai/agent/knowledge_index_pipeline`：Markdown 按标题切分、无标题文档处理、title 元数据与 UUID 校验（2 个用例）
+- `internal/ai/tools`：`get_current_time` 工具名称与秒/毫秒/微秒时间戳自洽性（2 个用例）
+- 工程改进：`retriever` 集成测试增加 Milvus 可用性探测，无基础设施环境自动跳过，`go test ./...` 可全量通过
+
+### 8.3 部署与全链路验证
+
+- Docker Compose 部署 Milvus 向量数据库（etcd / minio / standalone），Ollama 本地部署 `nomic-embed-text` 向量模型（768 维）
+- 知识库构建：告警处理手册等 3 个 Markdown 文档索引入库（11 个向量分块），RAG 召回实测验证（对话回答与手册内容逐字对应）
+- 服务联调：后端（6872）+ 前端（8080）+ Prometheus（9090）+ test-server 指标模拟（2112）全链路真实运行
+- AIOps 实测：正确查询 3 条活跃告警（错误率 / 延迟 / CPU 指标）并生成分析报告
