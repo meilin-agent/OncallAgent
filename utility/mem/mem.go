@@ -51,10 +51,17 @@ func (c *SimpleMemory) SetMessages(msg *schema.Message) {
 	}
 }
 
-// GetMessages 返回当前会话的历史消息
+// GetMessages 返回当前会话的历史消息（快照副本）
 func (c *SimpleMemory) GetMessages() []*schema.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	return c.Messages
+	// 返回副本而非内部切片别名，避免调用方通过返回值修改内部存储，
+	// 同时防止锁释放后对共享底层数组的读写形成数据竞争
+	msgs := make([]*schema.Message, len(c.Messages))
+	for i, m := range c.Messages {
+		msgCopy := *m
+		msgs[i] = &msgCopy
+	}
+	return msgs
 }

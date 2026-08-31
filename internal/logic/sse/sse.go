@@ -58,7 +58,9 @@ func (c *Client) SendToClient(eventType, data string) bool {
 		time.Now().UnixNano(), eventType, data,
 	)
 	// 尝试发送消息，如果缓冲区满则跳过
-	c.Request.Response.Writefln(msg)
+	// 消息内容中可能包含 % 字符（如"使用率 95%"），必须以纯文本方式写出，
+	// 否则 Writefln 会将其误解析为格式动词导致内容被破坏
+	c.Request.Response.Writefln("%s", msg)
 	c.Request.Response.Flush()
 	return true
 }
