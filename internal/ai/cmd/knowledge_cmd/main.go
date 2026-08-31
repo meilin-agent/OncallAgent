@@ -43,6 +43,9 @@ func main() {
 		if d.IsDir() {
 			return nil
 		}
+		// 统一使用斜杠分隔符：Windows 下 WalkDir 返回反斜杠路径，
+		// 会导致 Milvus 过滤表达式 metadata["_source"] == "docs\bak\x.md" 解析失败
+		path = filepath.ToSlash(path)
 
 		if !strings.HasSuffix(path, ".md") {
 			fmt.Printf("[skip] not a markdown file: %s\n", path)
