@@ -2,6 +2,7 @@ package tools
 
 import (
 	"context"
+	"time"
 
 	e_mcp "github.com/cloudwego/eino-ext/components/tool/mcp"
 	"github.com/cloudwego/eino/components/tool"
@@ -24,7 +25,11 @@ func GetLogMcpTool() ([]tool.BaseTool, error) {
 		panic("要使用GetLogMcpTool，请先按照教程申请mcp url")
 	}
 
-	ctx := context.Background()
+	// 连接与初始化限定超时，MCP 服务不可用/响应缓慢时快速失败，
+	// 由调用方决定降级，避免阻塞整个运维分析流程
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
 	cli, err := client.NewSSEMCPClient(mcp_url)
 	if err != nil {
 		return []tool.BaseTool{}, err
