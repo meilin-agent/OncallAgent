@@ -2,7 +2,7 @@
 typora-copy-images-to: ./imgs
 ---
 
-# SuperBizAgent ｜ 大模型 Agent 开发项目
+# OncallAgent ｜ 大模型 Agent 开发项目
 
 简单来说，是一个基于AI的企业级运维自动化助手，项目背景是解决实际企业级问题的，并不是玩具项目。目的是解决传统值班中，人工值守和排查问题的低效痛点，通过整合【知识库Agent】、【对话Agent】、【运维Agent】三大核心Agent能力，实现问题自动应答和故障智能排查的一体化服务，降低团队值班人力成本，提升团队效率。
 
@@ -18,7 +18,7 @@ typora-copy-images-to: ./imgs
 
 ## 一、系统概览
 
-**系统名称**：SuperBizAgent（智能运维告警助手）
+**系统名称**：OncallAgent（智能运维告警助手）
 **核心功能**：基于AI的告警处理、智能问答与运维分析  
 **技术栈**：  
 
@@ -79,7 +79,7 @@ ollama_embedding_model:
 
 ## 三、启动命令
 
-> **Windows 一键启动**：双击 [start-superbiz.bat](start-superbiz.bat) 自动拉起后端（6872）、前端（8080）、告警模拟（2112）全套服务；双击 [stop-superbiz.bat](stop-superbiz.bat) 一键全部停止。
+> **Windows 一键启动**：双击 [start-oncall.bat](start-oncall.bat) 自动拉起后端（6872）、前端（8080）、告警模拟（2112）全套服务；双击 [stop-oncall.bat](stop-oncall.bat) 一键全部停止。
 
 ### 启动后端
 

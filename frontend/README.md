@@ -1,8 +1,8 @@
-# SuperBizAgent 前端使用指南
+# OncallAgent 前端使用指南
 
 ## 功能介绍
 
-SuperBizAgent 前端提供了以下功能：
+OncallAgent 前端提供了以下功能：
 
 ### 1. 智能对话
 - **普通对话模式**：传统的请求-响应模式
@@ -43,7 +43,7 @@ chmod +x start.sh
 ### 上传成功后
 - 会显示绿色的成功提示
 - 显示上传的文件名和文件大小
-- 文件会保存到 `/Users/wuxufei/GolandProjects/SuperBizAgent/docs/` 目录
+- 文件会保存到后端 `file_dir` 配置的目录（默认 `docs/`）
 
 ## 后端 API
 
@@ -64,7 +64,7 @@ chmod +x start.sh
   "message": "OK",
   "data": {
     "fileName": "example.pdf",
-    "filePath": "/Users/wuxufei/GolandProjects/SuperBizAgent/docs/example.pdf",
+    "filePath": "docs/example.pdf",
     "fileSize": 1024000
   }
 }

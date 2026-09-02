@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# SuperBizAgent Frontend 启动脚本
+# OncallAgent Frontend 启动脚本
 
-echo "🚀 启动 SuperBizAgent Frontend..."
+echo "🚀 启动 OncallAgent Frontend..."
 #echo "📁 当前目录: $(pwd)"
 echo "🌐 前端服务将在 http://localhost:8080 启动"
 echo "🔗 请确保后端服务运行在 http://localhost:6872"

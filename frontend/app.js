@@ -1,5 +1,5 @@
-// SuperBizAgent 前端应用
-class SuperBizAgentApp {
+// OncallAgent 前端应用
+class OncallAgentApp {
     constructor() {
         this.apiBaseUrl = 'http://localhost:6872/api';
         this.currentMode = 'quick'; // 'quick' 或 'stream'
@@ -540,7 +540,7 @@ class SuperBizAgentApp {
         // 更新输入框状态
         if (this.messageInput) {
             this.messageInput.disabled = this.isStreaming;
-            this.messageInput.placeholder = '问问SuperBizAgent 助手';
+            this.messageInput.placeholder = '问问OncallAgent 助手';
         }
     }
 
@@ -1354,5 +1354,5 @@ document.head.appendChild(style);
 
 // 初始化应用
 document.addEventListener('DOMContentLoaded', () => {
-    new SuperBizAgentApp();
+    new OncallAgentApp();
 });
