@@ -113,6 +113,21 @@ if errorlevel 1 (
     echo [ok] Ollama 运行中
 )
 
+    echo     正在预热向量模型（首次约 10-30 秒）...
+    set /a tries=0
+    :warmup_loop
+    set /a tries+=1
+    if !tries! gtr 30 (
+        echo [!] 模型预热超时，问答可能报错，请稍后重试
+        goto warmup_done
+    )
+    python -c "import urllib.request,json;o=urllib.request.build_opener(urllib.request.ProxyHandler({}));req=urllib.request.Request('http://localhost:11434/api/embed',data=json.dumps({'model':'nomic-embed-text','input':'warmup'}).encode(),headers={'Content-Type':'application/json'});o.open(req,timeout=120)" >nul 2>&1
+    if errorlevel 1 (
+        ping -n 3 127.0.0.1 >nul
+        goto warmup_loop
+    )
+    echo [ok] 向量模型已预热
+    :warmup_done
 rem ========== 8. 启动后端 ==========
 echo [4/6] 启动后端 http://localhost:6872 ...
 start "OncallAgent-Backend" /d "%~dp0" cmd /k "go run main.go"
