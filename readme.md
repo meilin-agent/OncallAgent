@@ -91,7 +91,7 @@ go run main.go
 
 ```bash
 # 启动前端
-cd SuperBizAgentFrontend
+cd frontend
 chmod a+x start.sh
 ./start.sh
 # 访问 http://localhost:8000

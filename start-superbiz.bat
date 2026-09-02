@@ -1,19 +1,19 @@
 @echo off
 setlocal EnableDelayedExpansion
-title SuperBizAgent Ò»¼üÆô¶¯
+title SuperBizAgent Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 cd /d "%~dp0"
 
 echo ==========================================
-echo    ÖÇÄÜ SuperBizAgent Ò»¼üÆô¶¯
-echo    Milvus + Prometheus + ¸æ¾¯Ä£Äâ + ºó¶Ë + Ç°¶Ë
+echo    ï¿½ï¿½ï¿½ï¿½ SuperBizAgent Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+echo    Milvus + Prometheus + ï¿½æ¾¯Ä£ï¿½ï¿½ + ï¿½ï¿½ï¿½ + Ç°ï¿½ï¿½
 echo ==========================================
 echo.
 
-rem ========== 1. È·±£ Docker Desktop ÔËÐÐ ==========
+rem ========== 1. È·ï¿½ï¿½ Docker Desktop ï¿½ï¿½ï¿½ï¿½ ==========
 docker info >nul 2>&1
 if not errorlevel 1 goto docker_ok
-echo [!] Docker Desktop Î´ÔËÐÐ£¬ÕýÔÚÆô¶¯...
-rem ¼æÈÝÁ½ÖÖ³£¼û°²×°Â·¾¶£¨ÏµÍ³¼¶ / ÓÃ»§¼¶£©
+echo [!] Docker Desktop Î´ï¿½ï¿½ï¿½Ð£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½...
+rem ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö³ï¿½ï¿½ï¿½ï¿½ï¿½×°Â·ï¿½ï¿½ï¿½ï¿½ÏµÍ³ï¿½ï¿½ / ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½
 if exist "C:\Program Files\Docker\Docker\Docker Desktop.exe" (
     start "" "C:\Program Files\Docker\Docker\Docker Desktop.exe"
 ) else (
@@ -21,57 +21,57 @@ if exist "C:\Program Files\Docker\Docker\Docker Desktop.exe" (
 )
 call :wait_docker
 if errorlevel 1 (
-    echo [x] Docker Desktop Æô¶¯³¬Ê± ^(200 Ãë^)£¬ÇëÊÖ¶¯Æô¶¯ºóÖØÐÂÔËÐÐ±¾½Å±¾
+    echo [x] Docker Desktop ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê± ^(200 ï¿½ï¿½^)ï¿½ï¿½ï¿½ï¿½ï¿½Ö¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð±ï¿½ï¿½Å±ï¿½
     pause
     exit /b 1
 )
 :docker_ok
-echo [ok] Docker Desktop ÔËÐÐÖÐ
+echo [ok] Docker Desktop ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
-rem ========== 2. ¶Ë¿ÚÕ¼ÓÃ¼ì²é ==========
+rem ========== 2. ï¿½Ë¿ï¿½Õ¼ï¿½Ã¼ï¿½ï¿½ ==========
 for %%p in (6872 8080 2112) do (
     netstat -ano | findstr ":%%p " | findstr "LISTENING" >nul 2>&1
     if not errorlevel 1 (
-        echo [x] ¶Ë¿Ú %%p ÒÑ±»Õ¼ÓÃ£¬¿ÉÄÜÒÑÓÐ·þÎñÔÚÔËÐÐ£¬ÇëÏÈÔËÐÐ stop-oncall.bat
+        echo [x] ï¿½Ë¿ï¿½ %%p ï¿½Ñ±ï¿½Õ¼ï¿½Ã£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ stop-oncall.bat
         pause
         exit /b 1
     )
 )
 
-rem ========== 3. ÅäÖÃÓëÒÀÀµ¼ì²é ==========
+rem ========== 3. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ==========
 if not exist "manifest\config\config.yaml" (
-    echo [x] È±ÉÙ manifest\config\config.yaml£¬Çë¸´ÖÆ config.example.yaml ²¢ÌîÐ´ API Key
+    echo [x] È±ï¿½ï¿½ manifest\config\config.yamlï¿½ï¿½ï¿½ë¸´ï¿½ï¿½ config.example.yaml ï¿½ï¿½ï¿½ï¿½Ð´ API Key
     pause
     exit /b 1
 )
 go version >nul 2>&1
-if errorlevel 1 ( echo [x] Î´ÕÒµ½ Go£¬Çë°²×° Go 1.26+ & pause & exit /b 1 )
+if errorlevel 1 ( echo [x] Î´ï¿½Òµï¿½ Goï¿½ï¿½ï¿½ë°²×° Go 1.26+ & pause & exit /b 1 )
 python --version >nul 2>&1
-if errorlevel 1 ( echo [x] Î´ÕÒµ½ Python£¬Çë°²×° Python 3 & pause & exit /b 1 )
+if errorlevel 1 ( echo [x] Î´ï¿½Òµï¿½ Pythonï¿½ï¿½ï¿½ë°²×° Python 3 & pause & exit /b 1 )
 curl --version >nul 2>&1
-if errorlevel 1 ( echo [x] Î´ÕÒµ½ curl & pause & exit /b 1 )
+if errorlevel 1 ( echo [x] Î´ï¿½Òµï¿½ curl & pause & exit /b 1 )
 
-rem ========== 4. Æô¶¯ Docker ÈÝÆ÷Õ»£¨Milvus / Prometheus£© ==========
+rem ========== 4. ï¿½ï¿½ï¿½ï¿½ Docker ï¿½ï¿½ï¿½ï¿½Õ»ï¿½ï¿½Milvus / Prometheusï¿½ï¿½ ==========
 echo.
-echo [1/6] Æô¶¯ Docker ÈÝÆ÷ ^(Milvus / Prometheus^)...
+echo [1/6] ï¿½ï¿½ï¿½ï¿½ Docker ï¿½ï¿½ï¿½ï¿½ ^(Milvus / Prometheus^)...
 cd /d "%~dp0manifest\docker"
 docker compose up -d etcd minio standalone prometheus
 if errorlevel 1 (
-    echo [x] Docker ÈÝÆ÷Æô¶¯Ê§°Ü£¬Çë¼ì²é Docker ÊÇ·ñÕý³£
+    echo [x] Docker ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê§ï¿½Ü£ï¿½ï¿½ï¿½ï¿½ï¿½ Docker ï¿½Ç·ï¿½ï¿½ï¿½ï¿½ï¿½
     pause
     exit /b 1
 )
-rem È·±£ Prometheus ¼ÓÔØ×îÐÂÅäÖÃ£¨host.docker.internal ×¥È¡ËÞÖ÷»ú£©
+rem È·ï¿½ï¿½ Prometheus ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã£ï¿½host.docker.internal ×¥È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 docker compose restart prometheus >nul 2>&1
 cd /d "%~dp0"
 
-rem ========== 5. µÈ´ý Milvus ¾ÍÐ÷£¨×î³¤ 60 Ãë£© ==========
-echo [2/6] µÈ´ý Milvus ¾ÍÐ÷...
+rem ========== 5. ï¿½È´ï¿½ Milvus ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½î³¤ 60 ï¿½ë£© ==========
+echo [2/6] ï¿½È´ï¿½ Milvus ï¿½ï¿½ï¿½ï¿½...
 set /a tries=0
 :wait_milvus
 set /a tries+=1
 if !tries! gtr 12 (
-    echo [x] Milvus Æô¶¯³¬Ê±£¬Çë¼ì²éÈÝÆ÷×´Ì¬: docker ps
+    echo [x] Milvus ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬: docker ps
     pause
     exit /b 1
 )
@@ -80,21 +80,21 @@ if errorlevel 1 (
     ping -n 6 127.0.0.1 >nul
     goto wait_milvus
 )
-echo [ok] Milvus ÒÑ¾ÍÐ÷
+echo [ok] Milvus ï¿½Ñ¾ï¿½ï¿½ï¿½
 
-rem ========== 6. Æô¶¯¸æ¾¯Ä£ÄâÆ÷ test-server£¨Ô­Éú½ø³Ì£© ==========
-echo [3/6] ×¼±¸¸æ¾¯Ä£ÄâÆ÷ test-server...
+rem ========== 6. ï¿½ï¿½ï¿½ï¿½ï¿½æ¾¯Ä£ï¿½ï¿½ï¿½ï¿½ test-serverï¿½ï¿½Ô­ï¿½ï¿½ï¿½ï¿½ï¿½Ì£ï¿½ ==========
+echo [3/6] ×¼ï¿½ï¿½ï¿½æ¾¯Ä£ï¿½ï¿½ï¿½ï¿½ test-server...
 if not exist "manifest\docker\testserver.exe" (
-    echo     Ê×´ÎÔËÐÐ£¬ÕýÔÚ±àÒë test-server£¨Ô¼ 10 Ãë£©...
+    echo     ï¿½×´ï¿½ï¿½ï¿½ï¿½Ð£ï¿½ï¿½ï¿½ï¿½Ú±ï¿½ï¿½ï¿½ test-serverï¿½ï¿½Ô¼ 10 ï¿½ë£©...
     go build -o manifest\docker\testserver.exe manifest\docker\prometheusTestServer\main.go
-    if errorlevel 1 ( echo [x] test-server ±àÒëÊ§°Ü & pause & exit /b 1 )
+    if errorlevel 1 ( echo [x] test-server ï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½ & pause & exit /b 1 )
 )
 start "SuperBizAgent-testserver" /d "%~dp0manifest\docker" "%~dp0manifest\docker\testserver.exe"
 set /a tries=0
 :wait_testserver
 set /a tries+=1
 if !tries! gtr 10 (
-    echo [x] test-server Æô¶¯Ê§°Ü
+    echo [x] test-server ï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½
     pause
     exit /b 1
 )
@@ -103,22 +103,22 @@ if errorlevel 1 (
     ping -n 3 127.0.0.1 >nul
     goto wait_testserver
 )
-echo [ok] ¸æ¾¯Ä£ÄâÆ÷ÒÑÆô¶¯ ^(Ô¼ 20 Ãëºó Prometheus ´¥·¢ 3 ÌõÄ£Äâ¸æ¾¯^)
+echo [ok] ï¿½æ¾¯Ä£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ^(Ô¼ 20 ï¿½ï¿½ï¿½ Prometheus ï¿½ï¿½ï¿½ï¿½ 3 ï¿½ï¿½Ä£ï¿½ï¿½æ¾¯^)
 
-rem ========== 7. ¼ì²é Ollama£¨¿ÉÑ¡£¬È±ÁËÖªÊ¶ÎÊ´ð²»¿ÉÓÃ£© ==========
+rem ========== 7. ï¿½ï¿½ï¿½ Ollamaï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½È±ï¿½ï¿½ÖªÊ¶ï¿½Ê´ð²»¿ï¿½ï¿½Ã£ï¿½ ==========
 curl -s --max-time 3 http://localhost:11434/api/tags >nul 2>&1
 if errorlevel 1 (
-    echo [!] Ollama Î´ÔËÐÐ ¡ª¡ª ÖªÊ¶ÎÊ´ð½«²»¿ÉÓÃ£¬ÇëÊÖ¶¯Æô¶¯ Ollama
+    echo [!] Ollama Î´ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ÖªÊ¶ï¿½Ê´ð½«²ï¿½ï¿½ï¿½ï¿½Ã£ï¿½ï¿½ï¿½ï¿½Ö¶ï¿½ï¿½ï¿½ï¿½ï¿½ Ollama
 ) else (
-    echo [ok] Ollama ÔËÐÐÖÐ
+    echo [ok] Ollama ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 )
 
-    echo     ÕýÔÚÔ¤ÈÈÏòÁ¿Ä£ÐÍ£¨Ê×´ÎÔ¼ 10-30 Ãë£©...
+    echo     ï¿½ï¿½ï¿½ï¿½Ô¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä£ï¿½Í£ï¿½ï¿½×´ï¿½Ô¼ 10-30 ï¿½ë£©...
     set /a tries=0
     :warmup_loop
     set /a tries+=1
     if !tries! gtr 30 (
-        echo [!] Ä£ÐÍÔ¤ÈÈ³¬Ê±£¬ÎÊ´ð¿ÉÄÜ±¨´í£¬ÇëÉÔºóÖØÊÔ
+        echo [!] Ä£ï¿½ï¿½Ô¤ï¿½È³ï¿½Ê±ï¿½ï¿½ï¿½Ê´ï¿½ï¿½ï¿½Ü±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ôºï¿½ï¿½ï¿½ï¿½ï¿½
         goto warmup_done
     )
     python -c "import urllib.request,json;o=urllib.request.build_opener(urllib.request.ProxyHandler({}));req=urllib.request.Request('http://localhost:11434/api/embed',data=json.dumps({'model':'nomic-embed-text','input':'warmup'}).encode(),headers={'Content-Type':'application/json'});o.open(req,timeout=120)" >nul 2>&1
@@ -126,23 +126,23 @@ if errorlevel 1 (
         ping -n 3 127.0.0.1 >nul
         goto warmup_loop
     )
-    echo [ok] ÏòÁ¿Ä£ÐÍÒÑÔ¤ÈÈ
+    echo [ok] ï¿½ï¿½ï¿½ï¿½Ä£ï¿½ï¿½ï¿½ï¿½Ô¤ï¿½ï¿½
     :warmup_done
-rem ========== 8. Æô¶¯ºó¶Ë ==========
-echo [4/6] Æô¶¯ºó¶Ë http://localhost:6872 ...
+rem ========== 8. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ==========
+echo [4/6] ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ http://localhost:6872 ...
 start "SuperBizAgent-Backend" /d "%~dp0" cmd /k "go run main.go"
 
-rem ========== 9. Æô¶¯Ç°¶Ë ==========
-echo [5/6] Æô¶¯Ç°¶Ë http://localhost:8080 ...
-start "SuperBizAgent-Frontend" /d "%~dp0SuperBizAgentFrontend" cmd /k "python -m http.server 8080"
+rem ========== 9. ï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½ ==========
+echo [5/6] ï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½ http://localhost:8080 ...
+start "SuperBizAgent-Frontend" /d "%~dp0frontend" cmd /k "python -m http.server 8080"
 
-rem ========== 10. µÈ´ýºó¶Ë¾ÍÐ÷²¢´ò¿ªä¯ÀÀÆ÷ ==========
-echo [6/6] µÈ´ýºó¶Ë¾ÍÐ÷...
+rem ========== 10. ï¿½È´ï¿½ï¿½ï¿½Ë¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ==========
+echo [6/6] ï¿½È´ï¿½ï¿½ï¿½Ë¾ï¿½ï¿½ï¿½...
 set /a tries=0
 :wait_backend
 set /a tries+=1
 if !tries! gtr 30 (
-    echo [!] ºó¶ËÆô¶¯½ÏÂý£¬ÇëÊÖ¶¯Ë¢ÐÂä¯ÀÀÆ÷
+    echo [!] ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¶ï¿½Ë¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     goto done
 )
 curl -s --max-time 2 http://localhost:6872/api.json >nul 2>&1
@@ -152,19 +152,19 @@ if errorlevel 1 (
 )
 
 :done
-echo Æô¶¯Íê³É£¡ÕýÔÚ´ò¿ªä¯ÀÀÆ÷...
+echo ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É£ï¿½ï¿½ï¿½ï¿½Ú´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½...
 ping -n 3 127.0.0.1 >nul
 start http://localhost:8080
 echo.
 echo ==========================================
-echo   Æô¶¯Íê³É£¡ÑÝÊ¾Íê³ÉºóÔËÐÐ stop-oncall.bat
-echo   ÌáÊ¾£º¸æ¾¯Ä£ÄâÆ÷Æô¶¯Ô¼ 20 Ãëºó£¬
-echo   Prometheus ²Å»á´¥·¢Ä£Äâ¸æ¾¯£¬ÔÙµã"AI Ops"
+echo   ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É£ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½Éºï¿½ï¿½ï¿½ï¿½ï¿½ stop-oncall.bat
+echo   ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½æ¾¯Ä£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô¼ 20 ï¿½ï¿½ï¿½
+echo   Prometheus ï¿½Å»á´¥ï¿½ï¿½Ä£ï¿½ï¿½æ¾¯ï¿½ï¿½ï¿½Ùµï¿½"AI Ops"
 echo ==========================================
 pause
 exit /b 0
 
-rem ========== ×Ó³ÌÐò£ºµÈ´ý Docker ¾ÍÐ÷ ==========
+rem ========== ï¿½Ó³ï¿½ï¿½ò£ºµÈ´ï¿½ Docker ï¿½ï¿½ï¿½ï¿½ ==========
 :wait_docker
 set /a tries=0
 :wait_docker_loop

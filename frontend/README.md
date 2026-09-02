@@ -19,7 +19,7 @@ SuperBizAgent 前端提供了以下功能：
 ### 启动前端服务
 
 ```bash
-cd SuperBizAgentFrontend
+cd frontend
 chmod +x start.sh
 ./start.sh
 ```

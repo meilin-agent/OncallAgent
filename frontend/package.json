@@ -1,5 +1,5 @@
 {
-  "name": "superbizagent-frontend",
+  "name": "frontend",
   "version": "1.0.0",
   "description": "SuperBizAgent 前端对话界面",
   "main": "index.html",
@@ -24,10 +24,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/SuperBizAgentFrontend.git"
+    "url": "https://github.com/meilin-agent/OncallAgent.git"
   },
   "bugs": {
-    "url": "https://github.com/your-org/SuperBizAgentFrontend/issues"
+    "url": "https://github.com/meilin-agent/OncallAgent/issues"
   },
-  "homepage": "https://github.com/your-org/SuperBizAgentFrontend#readme"
+  "homepage": "https://github.com/meilin-agent/OncallAgent#readme"
 }
