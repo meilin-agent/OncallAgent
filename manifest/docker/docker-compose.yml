@@ -78,6 +78,9 @@ services:
     container_name: prometheus
     ports:
       - "9090:9090"
+    # 让容器内的 host.docker.internal 指向宿主机（抓取宿主机上原生运行的 test-server）
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./prometheus_config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus_config/alert.rules:/etc/prometheus/alert.rules:ro

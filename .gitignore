@@ -11,6 +11,7 @@ bin/
 gf
 main
 main.exe
+testserver.exe
 output/
 manifest/output/
 temp/

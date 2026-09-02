@@ -10,7 +10,9 @@ scrape_configs:
     static_configs:
       - targets: ["localhost:9090"]
 
-  # 抓取 Docker 中的测试服务器
+  # 抓取宿主机上原生运行的测试服务器（host.docker.internal 指向宿主机）
+  # 说明：test-server 以原生进程方式运行（见 start-oncall.bat），
+  # 不要使用 docker 容器方式（其构建上下文缺少根目录 go.mod，无法构建）
   - job_name: "oncall-test"
     static_configs:
-      - targets: ["test-server:2112"]
+      - targets: ["host.docker.internal:2112"]
