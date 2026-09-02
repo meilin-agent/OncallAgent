@@ -1,10 +1,10 @@
 @echo off
 setlocal EnableDelayedExpansion
-title OncallAgent 一键启动
+title SuperBizAgent 一键启动
 cd /d "%~dp0"
 
 echo ==========================================
-echo    智能 OnCall Agent 一键启动
+echo    智能 SuperBizAgent 一键启动
 echo    Milvus + Prometheus + 告警模拟 + 后端 + 前端
 echo ==========================================
 echo.
@@ -89,7 +89,7 @@ if not exist "manifest\docker\testserver.exe" (
     go build -o manifest\docker\testserver.exe manifest\docker\prometheusTestServer\main.go
     if errorlevel 1 ( echo [x] test-server 编译失败 & pause & exit /b 1 )
 )
-start "OncallAgent-testserver" /d "%~dp0manifest\docker" "%~dp0manifest\docker\testserver.exe"
+start "SuperBizAgent-testserver" /d "%~dp0manifest\docker" "%~dp0manifest\docker\testserver.exe"
 set /a tries=0
 :wait_testserver
 set /a tries+=1
@@ -130,11 +130,11 @@ if errorlevel 1 (
     :warmup_done
 rem ========== 8. 启动后端 ==========
 echo [4/6] 启动后端 http://localhost:6872 ...
-start "OncallAgent-Backend" /d "%~dp0" cmd /k "go run main.go"
+start "SuperBizAgent-Backend" /d "%~dp0" cmd /k "go run main.go"
 
 rem ========== 9. 启动前端 ==========
 echo [5/6] 启动前端 http://localhost:8080 ...
-start "OncallAgent-Frontend" /d "%~dp0SuperBizAgentFrontend" cmd /k "python -m http.server 8080"
+start "SuperBizAgent-Frontend" /d "%~dp0SuperBizAgentFrontend" cmd /k "python -m http.server 8080"
 
 rem ========== 10. 等待后端就绪并打开浏览器 ==========
 echo [6/6] 等待后端就绪...

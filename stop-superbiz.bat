@@ -1,9 +1,9 @@
 @echo off
-title OncallAgent 一键停止
+title SuperBizAgent 一键停止
 cd /d "%~dp0"
 
 echo ==========================================
-echo    智能 OnCall Agent 一键停止
+echo    智能 SuperBizAgent 一键停止
 echo ==========================================
 echo.
 
