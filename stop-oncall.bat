@@ -1,37 +1,37 @@
 @echo off
-title OncallAgent ä¸€é”®åœæ­¢
+title OncallAgent Ò»¼üÍ£Ö¹
 cd /d "%~dp0"
 
 echo ==========================================
-echo    æ™ºèƒ½ OncallAgent ä¸€é”®åœæ­¢
+echo    ÖÇÄÜ OncallAgent Ò»¼üÍ£Ö¹
 echo ==========================================
 echo.
 
-rem ---------- 1. åœæ­¢æœ¬åœ°è¿›ç¨‹ï¼ˆåç«¯ 6872 / å‰ç«¯ 8080 / å‘Šè­¦æ¨¡æ‹Ÿ 2112ï¼‰ ----------
-echo [1/3] åœæ­¢æœ¬åœ°è¿›ç¨‹...
+rem ---------- 1. Í£Ö¹±¾µØ½ø³Ì£¨ºó¶Ë 6872 / Ç°¶Ë 8080 / ¸æ¾¯Ä£Äâ 2112£© ----------
+echo [1/3] Í£Ö¹±¾µØ½ø³Ì...
 for %%p in (6872 8080 2112) do (
     for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":%%p " ^| findstr "LISTENING"') do (
-        rem åªç»“æŸ go/python/testserver è¿›ç¨‹ï¼Œé¿å…è¯¯æ€ Docker ç­‰ç³»ç»Ÿè¿›ç¨‹
+        rem Ö»½áÊø go/python/testserver ½ø³Ì£¬±ÜÃâÎóÉ± Docker µÈÏµÍ³½ø³Ì
         tasklist /FI "PID eq %%a" /FO CSV 2>nul | findstr /I "python go main testserver" >nul 2>&1
         if not errorlevel 1 (
             taskkill /PID %%a /F >nul 2>&1
-            echo    å·²ç»“æŸç«¯å£ %%p çš„è¿›ç¨‹ PID %%a
+            echo    ÒÑ½áÊø¶Ë¿Ú %%p µÄ½ø³Ì PID %%a
         )
     )
 )
 
-rem ---------- 2. åœæ­¢ Docker å®¹å™¨ ----------
-echo [2/3] åœæ­¢ Docker å®¹å™¨ ^(Milvus / Prometheus / test-server^)...
+rem ---------- 2. Í£Ö¹ Docker ÈİÆ÷ ----------
+echo [2/3] Í£Ö¹ Docker ÈİÆ÷ ^(Milvus / Prometheus / test-server^)...
 docker info >nul 2>&1
 if not errorlevel 1 (
     cd /d "%~dp0manifest\docker"
     docker compose stop 2>&1 | findstr /I "Stopped Stopping"
     cd /d "%~dp0"
 ) else (
-    echo    Docker Desktop æœªè¿è¡Œï¼Œè·³è¿‡å®¹å™¨åœæ­¢
+    echo    Docker Desktop Î´ÔËĞĞ£¬Ìø¹ıÈİÆ÷Í£Ö¹
 )
 
-rem ---------- 3. æ”¶å°¾ ----------
-echo [3/3] åœæ­¢å®Œæˆï¼Ollama ä¿æŒä¸å˜ï¼Œå¯éšæ—¶é‡æ–°è¿è¡Œ start-oncall.bat
+rem ---------- 3. ÊÕÎ² ----------
+echo [3/3] Í£Ö¹Íê³É£¡Ollama ±£³Ö²»±ä£¬¿ÉËæÊ±ÖØĞÂÔËĞĞ start-oncall.bat
 echo.
 pause
