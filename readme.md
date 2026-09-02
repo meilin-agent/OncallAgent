@@ -8,7 +8,7 @@ typora-copy-images-to: ./imgs
 
 本文章的目的就是对这个整个代码结构、功能实现做一个自我分析和总结，分享于大家。
 
-项目地址：https://github.com/gofish2020/OncallAgent 欢迎学习 Fork && Star
+项目地址：https://github.com/meilin-agent/OncallAgent 欢迎学习 Fork && Star
 
 > ### ⚡ 二次开发说明
 >
@@ -35,7 +35,7 @@ typora-copy-images-to: ./imgs
 ### 下载代码
 
 ```bash
-git clone https://github.com/gofish2020/OncallAgent.git
+git clone https://github.com/meilin-agent/OncallAgent.git
 ```
 
 ### 启动 docker
@@ -79,6 +79,8 @@ ollama_embedding_model:
 
 ## 三、启动命令
 
+> **Windows 一键启动**：双击 [start-superbiz.bat](start-superbiz.bat) 自动拉起后端（6872）、前端（8080）、告警模拟（2112）全套服务；双击 [stop-superbiz.bat](stop-superbiz.bat) 一键全部停止。
+
 ### 启动后端
 
 ```bash
@@ -94,7 +96,7 @@ go run main.go
 cd frontend
 chmod a+x start.sh
 ./start.sh
-# 访问 http://localhost:8000
+# 访问 http://localhost:8080
 ```
 
 
@@ -114,14 +116,22 @@ chmod a+x start.sh
 ```go
 func main() {
     ctx := gctx.New()
+
+    // 读取 config.yaml 中的 file_dir 目录，用于后续文件上传等操作
+    fileDir, err := g.Cfg().Get(ctx, "file_dir")
+    if err != nil {
+        panic(err)
+    }
+    common.FileDir = fileDir.String()
+
     s := g.Server()  // GoFrame服务器实例
-    
+
     s.Group("/api", func(group *ghttp.RouterGroup) {
         group.Middleware(middleware.CORSMiddleware)      // CORS跨域
         group.Middleware(middleware.ResponseMiddleware)  // 响应格式统一
         group.Bind(chat.NewV1())  // 绑定Chat控制器
     })
-    
+
     s.SetPort(6872)  // 监听端口
     s.Run()
 }
@@ -129,9 +139,10 @@ func main() {
 
 **启动流程**：
 1. 初始化GoFrame框架上下文
-2. 设置中间件（CORS、响应格式化）
-3. 注册API路由组 `/api`
-4. 启动HTTP服务器（端口6872）
+2. 读取 `config.yaml` 中的 `file_dir` 上传目录配置
+3. 设置中间件（CORS、响应格式化）
+4. 注册API路由组 `/api`
+5. 启动HTTP服务器（端口6872）
 
 ---
 
