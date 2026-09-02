@@ -2,7 +2,7 @@ package embedder
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"time"
 
 	"github.com/cloudwego/eino-ext/components/embedding/dashscope"
@@ -27,7 +27,7 @@ func DoubaoEmbedding(ctx context.Context) (eb embedding.Embedder, err error) {
 		Dimensions: &dim,
 	})
 	if err != nil {
-		log.Printf("new embedder error: %v\n", err)
+		fmt.Printf("new embedder error: %v\n", err)
 		return nil, err
 	}
 	return embedder, nil
@@ -50,8 +50,9 @@ func OllamaEmbedding(ctx context.Context) (eb embedding.Embedder, err error) {
 		Timeout: 10 * time.Second,
 	})
 	if err != nil {
-		log.Fatalf("NewEmbedder of ollama error: %v", err)
-		return nil, err
+		// 注意：这里不能使用 log.Fatal——Ollama 暂时不可用（如模型加载中）
+		// 时会导致整个后端进程退出，应返回错误交由调用方按请求粒度降级
+		return nil, fmt.Errorf("new ollama embedder failed: %w", err)
 	}
 	return embedder, nil
 }
