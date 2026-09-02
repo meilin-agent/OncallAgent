@@ -62,6 +62,15 @@ func BuildPlanAgent(ctx context.Context, query string) (string, []string, error)
 		return "", []string{}, fmt.Errorf("get lastMessage Error")
 	}
 
+	// 兜底收尾：流程可能因模型未正确调用 respond 工具而中断在中间状态，
+	// 基于全部执行记录强制生成最终报告，失败时回退原始结果
+	content := lastMessage.Content
+	if report, err := GenerateFinalReport(ctx, query, detail, content); err == nil {
+		content = report
+	} else {
+		fmt.Printf("[warn] generate final report failed, fallback to raw result: %v\n", err)
+	}
+
 	// 返回最终生成的内容和所有步骤详情
-	return lastMessage.Content, detail, nil
+	return content, detail, nil
 }
